@@ -7,26 +7,57 @@ export default function Home() {
   const [cvData, setCvData] = useState('')
   const [cvJSONData, setCvJSONData] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isImage, setIsImage] = useState(false)
 
   const handleFileChange = () => {
     setIsLoading(true)
     const file = document.getElementById('test-input').files[0]
-    // console.log(file)
-    if(!file){
+    if (!file) {
       setIsLoading(false)
       return
     }
-    let reader = new FileReader()
-    reader.readAsDataURL(file)
-    const img = document.getElementById('test-img')
-    reader.onloadend = () => {
-      // console.log(reader.result);
-      img.src = reader.result
-      getCVData(reader.result)
-    }
-    reader.onerror = (err) => {
-      setIsLoading(false)
-      console.log(err)
+    if (file.type !== "application/pdf") {
+      setIsImage(true)
+      let reader = new FileReader()
+      reader.readAsDataURL(file)
+      const img = document.getElementById('test-img')
+      reader.onloadend = () => {
+        img.src = reader.result
+        getCVData(reader.result)
+      }
+      reader.onerror = (err) => {
+        setIsLoading(false)
+        console.log(err)
+      }
+    } else if(file.type === "application/pdf"){
+      setIsImage(false)
+      const formData = new FormData();
+      formData.append('pdf-file',file)
+      axios.post(
+        '/api/handlePDF',
+        formData,
+        {
+          headers: { 'content-type': 'multipart/form-data' },
+          onUploadProgress: (event) => {
+            console.log(`Current progress:`, Math.round((event.loaded * 100) / event.total));
+          }
+        },
+      )
+        .then(({data:{result}}) => {
+          setIsLoading(false)
+          const text = result.join('\n')
+          const jsondata = '\nJSON ga dikirim, berat soalnya'
+          setCvData(text)
+          setCvJSONData(jsondata)
+          setIsLoading(false)
+        })
+        .catch(err => {
+          setIsLoading(false)
+          console.log(err)
+        })
+    } else {
+      document.getElementById('test-input').files = []
+      setIsImage(false)
     }
   }
 
@@ -51,7 +82,6 @@ export default function Home() {
     axios
       .post(`https://vision.googleapis.com/v1/images:annotate?key=${process.env.CV_API_KEY}`, request)
       .then(({ data: { responses } }) => {
-        console.log(responses)
         if (!responses[0].fullTextAnnotation) {
           setCvData('no text')
           setCvJSONData('no text')
@@ -82,13 +112,14 @@ export default function Home() {
         <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
-        <img id="test-img" width={cvData && !isLoading ? 400 : 0} height={cvData && !isLoading ? 400 : 0} />
-        <input id="test-input" type="file" accept=".jpg,.jpeg,.png" onChange={handleFileChange} />
+        <img id="test-img" width={cvData && !isLoading && isImage ? 400 : 0} height={cvData && !isLoading && isImage ? 400 : 0} />
+        {cvData && !isLoading && !isImage && <h1>File PDF Ga Ada Preview</h1>}
+        <input id="test-input" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={handleFileChange} />
         {isLoading ? (
           <h1>Loading.....</h1>
         ) : (
           <>
-            <button onClick={() => alert('lakukan upload!')}>Misalkan Ini Button Upload</button>
+            <button onClick={() => alert('TO DO: lakukan upload!')}>Misalkan Ini Button Upload</button>
             <div style={{ width: '80vw', margin: 'auto', minHeight: '50vh', background: '#ADD8E6' }}>
               {cvData.split('\n').map((v, i) => (
                 <div key={i}>{v}</div>
