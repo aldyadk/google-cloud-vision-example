@@ -81,6 +81,7 @@ apiRoute.use(uploadMiddleware);
 
 apiRoute.post(async (req, res) => {
   try {
+    // vision ini ga bs di import di JS client/browser, dia butuh Node Instance
     const client = new vision.ImageAnnotatorClient({ credentials });
       const request = {
         "requests": [
