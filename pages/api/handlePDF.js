@@ -1,7 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import nextConnect from 'next-connect';
 import multer from 'multer'
-const { Storage } = require('@google-cloud/storage')
+// const { Storage } = require('@google-cloud/storage')
 const vision = require('@google-cloud/vision')
 import fs from 'fs/promises'
 
@@ -30,11 +30,9 @@ const upload = multer({
 });
 
 const uploadMiddleware = upload.single('pdf-file');
-
-// Adds the middleware to Next-Connect
 apiRoute.use(uploadMiddleware);
 
-// Process a POST request using GCS
+// Process a POST request using GOOGLE CLOUD SERVICE
 // apiRoute.post((req, res) => {
 //   const storage = new Storage({ credentials })
 //   const bucketName = process.env.BUCKET_NAME;

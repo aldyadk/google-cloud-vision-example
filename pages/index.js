@@ -17,6 +17,7 @@ export default function Home() {
       return
     }
     if (file.type !== "application/pdf") {
+      // UNTUK PNG & JPG
       setIsImage(true)
       let reader = new FileReader()
       reader.readAsDataURL(file)
@@ -29,7 +30,8 @@ export default function Home() {
         setIsLoading(false)
         console.log(err)
       }
-    } else if(file.type === "application/pdf"){
+    } else {
+      // UNTUK PDF
       setIsImage(false)
       const formData = new FormData();
       formData.append('pdf-file',file)
@@ -55,9 +57,6 @@ export default function Home() {
           setIsLoading(false)
           console.log(err)
         })
-    } else {
-      document.getElementById('test-input').files = []
-      setIsImage(false)
     }
   }
 
