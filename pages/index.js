@@ -34,7 +34,7 @@ export default function Home() {
       // UNTUK PDF
       setIsImage(false)
       const formData = new FormData();
-      formData.append('pdf-file',file)
+      formData.append('pdf-file', file)
       axios.post(
         '/api/handlePDF',
         formData,
@@ -45,8 +45,85 @@ export default function Home() {
           }
         },
       )
-        .then(({data:{result}}) => {
+        .then(({ data: { result, asli } }) => {
           setIsLoading(false)
+          console.log('asli', asli)
+          
+          const page1 = asli.responses[0].responses[0].fullTextAnnotation.pages[0]
+          const { width, height, blocks } = page1
+          const mappedBlocks = blocks.map(blk => {
+            const blkObj = {}
+            blkObj.bound = blk.boundingBox.normalizedVertices.map(v => ({ x: v.x * width, y: v.y * height }))
+            blkObj.sentence = blk.paragraphs.map(p => p.words.map(w => w.symbols.map(s => s.text).join('')).join(' ')).join('\n')
+            return blkObj
+          })
+          console.log('mappedBlocks', mappedBlocks)
+
+          const refBound = mappedBlocks.find(v => v.sentence.toLowerCase() === '281,892 t').bound
+          function isWithin(a, b) {
+            let result = false
+            let key
+            const x1 = Math.abs(refBound[0].x - refBound[1].x)
+            const y1 = Math.abs(refBound[0].y - refBound[1].y)
+            const top = x1 > y1 ? x1 : y1
+            const x2 = Math.abs(refBound[1].x - refBound[2].x)
+            const y2 = Math.abs(refBound[1].y - refBound[2].y)
+            const left = x2 > y2 ? x2 : y2
+            const isVertical = top/left > 0
+            if(isVertical){
+              key = 'y'
+            } else {
+              key = 'x'
+            }
+            if(((a[0][key] <= b[0][key]) && (a[1][key] >= b[1][key])) || ((a[0][key] >= b[0][key]) && (a[1][key] <= b[1][key]))){
+              result = true
+            }
+            // console.log(isVertical, result, top/left, x1,y1,x2,y2)
+            
+            return result
+          }
+
+          let take = false
+          const tableData = mappedBlocks.filter(v => {
+            if (v.sentence.toLowerCase() === 'bl no') {
+              take = true
+            }
+            if (v.sentence.toLowerCase() === '281,892 t') {
+              take = false
+              return true
+            }
+            return take
+          })
+          console.log('tableData', tableData)
+
+          // isWithin(tableData[0].bound, tableData[1].bound)
+          // isWithin(tableData[3].bound, tableData[7].bound)
+          // isWithin(tableData[4].bound, tableData[21].bound)
+          // isWithin(tableData[4].bound, tableData[25].bound)
+          // isWithin(tableData[4].bound, tableData[26].bound)
+
+          // const table = []
+          // let row = 0
+          // tableData.forEach(val => {
+          //   if (!table.length) {
+          //     table.push([])
+          //   }
+            
+          //   if (isWithin(val.bound, tableData[0].bound)) {
+          //     if(val.sentence.toLowerCase() !== "01" && table.length !== 1){
+          //       row++
+          //     } 
+          //   }
+
+          //   // else {
+          //   //   const boundIndex = tableData[0].findIndex(v=>{
+          //   //     return isWithin(val.bound, v.bound)
+          //   //   })
+          //   // }
+
+          //   table[row].push(val)
+          // })
+
           const text = result.join('\n')
           const jsondata = '\nJSON ga dikirim, berat soalnya'
           setCvData(text)
@@ -89,6 +166,7 @@ export default function Home() {
         }
         const text = responses[0].fullTextAnnotation.text
         const jsondata = JSON.stringify(responses[0].textAnnotations, null, 2)
+        console.log(responses)
         setCvData(text)
         setCvJSONData(jsondata)
         setIsLoading(false)

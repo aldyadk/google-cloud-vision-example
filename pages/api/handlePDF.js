@@ -100,7 +100,7 @@ apiRoute.post(async (req, res) => {
       }
       const [result] = await client.batchAnnotateFiles(request);
       await fs.unlink(req.file.path)
-      res.status(200).json({ result: result.responses[0].responses.map(v=>v.fullTextAnnotation.text) })
+      res.status(200).json({ result: result.responses[0].responses.map(v=>v.fullTextAnnotation.text), asli:result })
   } catch (error) {
     console.log(error)
     res.status(500).json({message: error.message})
